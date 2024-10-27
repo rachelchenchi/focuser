@@ -1,26 +1,30 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # focuser
 =======
 # Welcome to your Expo app 👋
+=======
+# Focuser App
+>>>>>>> 583e083 (Initial commit)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native application for medication tracking and focused work sessions with buddies.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Medication Records: Track medications and get reminders
+- Buddy Doubling: Find focus partners and earn rewards together
 
-   ```bash
-   npm install
-   ```
+## Development
 
-2. Start the app
+### Prerequisites
 
-   ```bash
-    npx expo start
-   ```
+- Node.js 18+
+- npm
+- Expo CLI
 
-In the output, you'll find options to open the app in a
+### Setup
 
+<<<<<<< HEAD
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
@@ -52,3 +56,6 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 >>>>>>> 91340a5 (Initial commit)
+=======
+1. Clone the repository:
+>>>>>>> 583e083 (Initial commit)
