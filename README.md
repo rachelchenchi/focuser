@@ -1,11 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# focuser
-=======
-# Welcome to your Expo app 👋
-=======
 # Focuser App
->>>>>>> 583e083 (Initial commit)
 
 A React Native application for medication tracking and focused work sessions with buddies.
 
@@ -21,41 +14,147 @@ A React Native application for medication tracking and focused work sessions wit
 - Node.js 18+
 - npm
 - Expo CLI
+- [Android Studio](https://developer.android.com/studio) (for Android development)
+- [Xcode](https://developer.apple.com/xcode/) (for iOS development, macOS only)
 
 ### Setup
 
-<<<<<<< HEAD
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clone the repository:
 ```bash
-npm run reset-project
+git clone <your-repo-url>
+cd focuser
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies:
+```bash
+npm install
+```
 
-## Learn more
+3. Start the development server:
+```bash
+npm start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Development Environment
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+You can run the app using:
+- [Expo Go](https://expo.dev/go) on your physical device
+- [Android Emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS Simulator](https://docs.expo.dev/workflow/ios-simulator/) (macOS only)
 
-## Join the community
+### Project Structure
 
-Join our community of developers creating universal apps.
+```
+focuser/
+├── app/                   # Main application code
+│   ├── (tabs)/           # Tab-based navigation
+│   └── _layout.tsx       # Root layout
+├── assets/               # Static assets
+├── components/           # Reusable components
+├── constants/            # App constants
+└── types/                # TypeScript type definitions
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
->>>>>>> 91340a5 (Initial commit)
-=======
-1. Clone the repository:
->>>>>>> 583e083 (Initial commit)
+### Available Scripts
+
+- `npm start` - Start the Expo development server
+- `npm run android` - Start Android development build
+- `npm run ios` - Start iOS development build
+- `npm run web` - Start web development build
+- `npm run test` - Run tests
+- `npm run lint` - Run ESLint
+- `npm run typescript` - Run TypeScript checks
+
+## Testing
+
+### Unit Tests
+```bash
+npm run test
+```
+
+### Type Checking
+```bash
+npm run typescript
+```
+
+### Linting
+```bash
+npm run lint
+```
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration. The CI pipeline includes:
+
+- Dependency installation
+- Type checking
+- Linting
+- Unit testing
+
+The pipeline runs on:
+- Every push to main branch
+- Every pull request to main branch
+
+## Deployment
+
+### Android
+1. Configure app.json for Android
+2. Build the Android app:
+```bash
+eas build --platform android
+```
+
+### iOS
+1. Configure app.json for iOS
+2. Build the iOS app:
+```bash
+eas build --platform ios
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Commit Guidelines
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `docs:` - Documentation changes
+- `style:` - Code style changes
+- `refactor:` - Code refactoring
+- `test:` - Adding or modifying tests
+- `chore:` - Maintenance tasks
+
+## Troubleshooting
+
+Common issues and their solutions:
+
+1. Metro bundler issues:
+```bash
+npm start --reset-cache
+```
+
+2. Dependencies issues:
+```bash
+rm -rf node_modules
+npm install
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Expo](https://expo.dev/)
+- [React Native](https://reactnative.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+
+## Contact
+
+Project Link: [https://github.com/yourusername/focuser](https://github.com/yourusername/focuser)
