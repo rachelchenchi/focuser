@@ -1,4 +1,6 @@
 Flask==2.0.1
 Flask-Cors==3.0.10
 Flask-SQLAlchemy==2.5.1
+Flask-SocketIO==5.3.6
 PyJWT==2.1.0
+eventlet==0.33.3

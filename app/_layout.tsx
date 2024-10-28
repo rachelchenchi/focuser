@@ -15,6 +15,19 @@ export default function RootLayout() {
           title: 'Login'
         }}
       />
+      <Stack.Screen
+        name="buddy"
+        options={{
+          title: 'Focus Session'
+        }}
+      />
+      <Stack.Screen
+        name="focus"
+        options={{
+          title: 'Focus Timer',
+          headerBackVisible: false
+        }}
+      />
     </Stack>
   );
 }
