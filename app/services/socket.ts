@@ -27,9 +27,10 @@ class SocketService {
         });
     }
 
-    startMatching(focusTime: number, callbacks: {
-        onMatch: (partnerId: string) => void;
+    startMatching(focusTime: number, username: string, callbacks: {
+        onMatch: (partnerId: string, partnerUsername: string) => void;
         onTimeout: () => void;
+        onPartnerLeave?: () => void;
     }) {
         if (!this.socket) {
             console.log('Socket not connected');
@@ -38,9 +39,12 @@ class SocketService {
 
         this.removeAllListeners();
 
-        this.socket.on('match_success', (data: { partner_id: string }) => {
+        this.socket.on('match_success', (data: {
+            partner_id: string;
+            partner_username: string;
+        }) => {
             console.log('Match success:', data);
-            callbacks.onMatch(data.partner_id);
+            callbacks.onMatch(data.partner_id, data.partner_username);
         });
 
         this.socket.on('match_timeout', () => {
@@ -50,14 +54,30 @@ class SocketService {
             }, 0);
         });
 
+        this.socket.on('partner_left', () => {
+            console.log('Partner left');
+            if (callbacks.onPartnerLeave) {
+                callbacks.onPartnerLeave();
+            }
+        });
+
         console.log('Emitting start_matching with focus time:', focusTime);
-        this.socket.emit('start_matching', { focus_time: focusTime });
+        this.socket.emit('start_matching', {
+            focus_time: focusTime,
+            username: username
+        });
+    }
+
+    notifyLeaving(partnerId: string) {
+        if (!this.socket) return;
+        this.socket.emit('leaving_session', { partner_id: partnerId });
     }
 
     private removeAllListeners() {
         if (!this.socket) return;
         this.socket.off('match_success');
         this.socket.off('match_timeout');
+        this.socket.off('partner_left');
     }
 
     disconnect() {

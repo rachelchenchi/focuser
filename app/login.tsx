@@ -1,33 +1,54 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Text, Alert } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { router } from 'expo-router';
 import * as authService from './services/auth';
+import { useAuth } from './contexts/AuthContext';
+import { AlertModal } from './components/AlertModal';
 
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        buttons: [{ text: 'OK', onPress: () => { } }]
+    });
+    const { login: authLogin } = useAuth();
+
+    const showAlert = (title: string, message: string) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            buttons: [{
+                text: 'OK',
+                onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+            }]
+        });
+    };
 
     const handleSubmit = async () => {
         if (!username || !password) {
-            Alert.alert('Error', 'Please enter username and password');
+            showAlert('Error', 'Please enter username and password');
             return;
         }
 
         try {
             setIsLoading(true);
             if (isRegistering) {
-                await authService.register(username, password);
-                Alert.alert('Success', 'Registration successful! Please login.');
+                const response = await authService.register(username, password);
+                showAlert('Success', 'Registration successful! Please login.');
                 setIsRegistering(false);
             } else {
                 const response = await authService.login(username, password);
-                Alert.alert('Success', 'Login successful!');
-                router.replace('/');  // Navigate back to home
+                authLogin(response.token, response.user);
+                router.replace('/');
             }
         } catch (error) {
-            Alert.alert('Error', error instanceof Error ? error.message : 'Operation failed');
+            showAlert('Error', error instanceof Error ? error.message : 'Operation failed');
         } finally {
             setIsLoading(false);
         }
@@ -82,6 +103,13 @@ export default function LoginScreen() {
                     }
                 </Text>
             </TouchableOpacity>
+
+            <AlertModal
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttons={alertConfig.buttons}
+            />
         </View>
     );
 }

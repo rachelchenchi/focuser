@@ -85,7 +85,9 @@ def register():
 
 
 # 存储等待配对的用户
-waiting_users = defaultdict(list)  # key: focus_time, value: list of user_ids
+waiting_users = defaultdict(
+    list
+)  # key: focus_time, value: list of (user_id, username) tuples
 
 
 @socketio.on("connect")
@@ -96,31 +98,43 @@ def handle_connect():
 @socketio.on("disconnect")
 def handle_disconnect():
     print("Client disconnected")
+    user_id = request.sid
     # 清理等待列表中的断开连接的用户
     for time_slot in waiting_users:
-        if request.sid in waiting_users[time_slot]:
-            waiting_users[time_slot].remove(request.sid)
+        for user_data in waiting_users[time_slot]:
+            if user_data[0] == user_id:
+                waiting_users[time_slot].remove(user_data)
+                break
 
 
 @socketio.on("start_matching")
 def handle_matching(data):
     user_id = request.sid
     focus_time = data.get("focus_time")
+    username = data.get("username")
 
     # 将用户添加到等待列表
-    waiting_users[focus_time].append(user_id)
+    waiting_users[focus_time].append((user_id, username))
 
     # 检查是否有其他用户在等待相同时长
     if len(waiting_users[focus_time]) >= 2:
         # 获取第一个等待的用户
-        partner_id = waiting_users[focus_time][0]
+        partner_id, partner_username = waiting_users[focus_time][0]
         if partner_id != user_id:
             # 匹配成功，通知双方
-            emit("match_success", {"partner_id": user_id}, room=partner_id)
-            emit("match_success", {"partner_id": partner_id}, room=user_id)
+            emit(
+                "match_success",
+                {"partner_id": user_id, "partner_username": username},
+                room=partner_id,
+            )
+            emit(
+                "match_success",
+                {"partner_id": partner_id, "partner_username": partner_username},
+                room=user_id,
+            )
             # 从等待列表中移除这两个用户
-            waiting_users[focus_time].remove(partner_id)
-            waiting_users[focus_time].remove(user_id)
+            waiting_users[focus_time].remove((partner_id, partner_username))
+            waiting_users[focus_time].remove((user_id, username))
             return
 
     # 设置30秒超时
@@ -130,6 +144,14 @@ def handle_matching(data):
     if user_id in waiting_users[focus_time]:
         waiting_users[focus_time].remove(user_id)
         emit("match_timeout", room=user_id)
+
+
+@socketio.on("leaving_session")
+def handle_leaving(data):
+    partner_id = data.get("partner_id")
+    if partner_id:
+        # 通知伙伴该用户已离开
+        emit("partner_left", room=partner_id)
 
 
 if __name__ == "__main__":

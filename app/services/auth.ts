@@ -1,4 +1,4 @@
-interface AuthResponse {
+interface LoginResponse {
     token: string;
     user: {
         id: number;
@@ -6,13 +6,12 @@ interface AuthResponse {
     };
 }
 
-// 修改 API 地址
-const API_URL = 'http://localhost:5000/api';  // 确保这是正确的后端地址
+const API_URL = 'http://localhost:5000/api';
 
 export const login = async (
     username: string,
     password: string
-): Promise<AuthResponse> => {
+): Promise<LoginResponse> => {
     try {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
@@ -30,14 +29,14 @@ export const login = async (
 
         return data;
     } catch (error) {
-        throw new Error(error instanceof Error ? error.message : 'Network error');
+        throw error;
     }
 };
 
 export const register = async (
     username: string,
     password: string
-): Promise<AuthResponse> => {
+): Promise<LoginResponse> => {
     try {
         const response = await fetch(`${API_URL}/register`, {
             method: 'POST',
@@ -55,6 +54,6 @@ export const register = async (
 
         return data;
     } catch (error) {
-        throw new Error(error instanceof Error ? error.message : 'Network error');
+        throw error;
     }
 };

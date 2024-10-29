@@ -4,8 +4,11 @@ import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import socketService from './services/socket';
 import { AlertModal } from './components/AlertModal';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { useAuth } from './contexts/AuthContext';
 
 const FOCUS_TIMES = [
+    { label: '30 seconds (Debug)', value: 0.5 },
     { label: '25 minutes', value: 25 },
     { label: '30 minutes', value: 30 },
     { label: '45 minutes', value: 45 },
@@ -22,6 +25,7 @@ export default function BuddyScreen() {
     const [selectedTime, setSelectedTime] = useState(25);
     const [mode, setMode] = useState('buddy');
     const [isSearching, setIsSearching] = useState(false);
+    const [timeoutCount, setTimeoutCount] = useState(30);
     const [alertConfig, setAlertConfig] = useState<{
         visible: boolean;
         title: string;
@@ -33,6 +37,19 @@ export default function BuddyScreen() {
         message: '',
         buttons: []
     });
+    const { user } = useAuth();
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isSearching && timeoutCount > 0) {
+            timer = setInterval(() => {
+                setTimeoutCount(prev => prev - 1);
+            }, 1000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [isSearching, timeoutCount]);
 
     useEffect(() => {
         socketService.connect();
@@ -42,25 +59,31 @@ export default function BuddyScreen() {
         };
     }, []);
 
+    const resetSearch = () => {
+        setIsSearching(false);
+        setTimeoutCount(30);
+    };
+
     const showAlert = (config: typeof alertConfig) => {
         setAlertConfig({ ...config, visible: true });
     };
 
     const handleStart = () => {
-        if (mode === 'buddy') {
+        if (mode === 'buddy' && user) {
             setIsSearching(true);
+            setTimeoutCount(30);
             console.log('Starting match search...');
 
-            socketService.startMatching(selectedTime, {
-                onMatch: (partnerId) => {
-                    console.log('Match found:', partnerId);
-                    setIsSearching(false);
+            socketService.startMatching(selectedTime, user.username, {
+                onMatch: (partnerId, partnerUsername) => {
+                    console.log('Match found:', partnerId, partnerUsername);
+                    resetSearch();
                     showAlert({
                         visible: true,
                         title: 'Match Found!',
-                        message: 'A buddy has been found. Starting session...',
+                        message: `You've been matched with ${partnerUsername}!`,
                         buttons: [{
-                            text: 'OK',
+                            text: 'Start',
                             onPress: () => {
                                 setAlertConfig(prev => ({ ...prev, visible: false }));
                                 router.push({
@@ -68,7 +91,8 @@ export default function BuddyScreen() {
                                     params: {
                                         time: selectedTime,
                                         mode: mode,
-                                        partnerId
+                                        partnerId,
+                                        partnerUsername
                                     }
                                 });
                             }
@@ -77,7 +101,7 @@ export default function BuddyScreen() {
                 },
                 onTimeout: () => {
                     console.log('Match timeout received');
-                    setIsSearching(false);
+                    resetSearch();
                     showAlert({
                         visible: true,
                         title: 'No Match Found',
@@ -88,7 +112,6 @@ export default function BuddyScreen() {
                                 style: 'cancel',
                                 onPress: () => {
                                     setAlertConfig(prev => ({ ...prev, visible: false }));
-                                    setIsSearching(false);
                                 }
                             },
                             {
@@ -115,6 +138,30 @@ export default function BuddyScreen() {
                 params: { time: selectedTime, mode: mode }
             });
         }
+    };
+
+    const handleCancel = () => {
+        showAlert({
+            visible: true,
+            title: 'Cancel Search',
+            message: 'Are you sure you want to cancel the search?',
+            buttons: [
+                {
+                    text: 'No',
+                    style: 'cancel',
+                    onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                },
+                {
+                    text: 'Yes',
+                    style: 'destructive',
+                    onPress: () => {
+                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                        resetSearch();
+                        router.back();
+                    }
+                }
+            ]
+        });
     };
 
     return (
@@ -154,6 +201,24 @@ export default function BuddyScreen() {
                     ))}
                 </Picker>
             </View>
+
+            {isSearching && (
+                <View style={styles.loadingContainer}>
+                    <LoadingSpinner size={50} color="#007AFF" />
+                    <Text style={styles.searchingText}>
+                        Looking for a buddy...
+                    </Text>
+                    <Text style={styles.timeoutText}>
+                        {`Timeout in ${timeoutCount} seconds`}
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={handleCancel}
+                    >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             <TouchableOpacity
                 style={[styles.button, isSearching && styles.buttonDisabled]}
@@ -212,5 +277,27 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        marginVertical: 20,
+    },
+    searchingText: {
+        fontSize: 16,
+        marginTop: 10,
+        color: '#007AFF',
+    },
+    timeoutText: {
+        fontSize: 14,
+        marginTop: 5,
+        color: '#666',
+    },
+    cancelButton: {
+        marginTop: 15,
+        padding: 10,
+    },
+    cancelButtonText: {
+        color: '#FF3B30',
+        fontSize: 16,
     },
 });
