@@ -31,6 +31,7 @@ class SocketService {
         onMatch: (partnerId: string, partnerUsername: string) => void;
         onTimeout: () => void;
         onPartnerLeave?: () => void;
+        onPartnerComplete?: () => void;
     }) {
         if (!this.socket) {
             console.log('Socket not connected');
@@ -71,6 +72,11 @@ class SocketService {
     notifyLeaving(partnerId: string) {
         if (!this.socket) return;
         this.socket.emit('leaving_session', { partner_id: partnerId });
+    }
+
+    notifyCompletion(partnerId: string) {
+        if (!this.socket) return;
+        this.socket.emit('session_complete', { partner_id: partnerId });
     }
 
     private removeAllListeners() {

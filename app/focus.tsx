@@ -4,10 +4,11 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { AlertModal } from './components/AlertModal';
 import { useAuth } from './contexts/AuthContext';
 import socketService from './services/socket';
+import { calculateReward, updateUserCoins, getUserCoins } from './services/rewards';
 
 export default function FocusScreen() {
     const params = useLocalSearchParams();
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const totalTime = Number(params.time) * 60;
     const [timeLeft, setTimeLeft] = useState(totalTime);
     const [isActive, setIsActive] = useState(false);
@@ -26,6 +27,8 @@ export default function FocusScreen() {
         }>
     });
     const [partnerLeft, setPartnerLeft] = useState(false);
+    const [coins, setCoins] = useState(0);
+    const [partnerCompleted, setPartnerCompleted] = useState(false);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -72,8 +75,22 @@ export default function FocusScreen() {
                                 style: 'destructive',
                                 onPress: () => {
                                     setAlertConfig(prev => ({ ...prev, visible: false }));
-                                    router.back();
+                                    handleGiveUp();
                                 }
+                            }
+                        ]
+                    });
+                },
+                onPartnerComplete: () => {
+                    setPartnerCompleted(true);
+                    showAlert({
+                        visible: true,
+                        title: 'Partner Completed',
+                        message: 'Your focus buddy has completed their session!',
+                        buttons: [
+                            {
+                                text: 'OK',
+                                onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
                             }
                         ]
                     });
@@ -83,38 +100,92 @@ export default function FocusScreen() {
 
         return () => {
             if (mode === 'buddy' && partnerId) {
-                socketService.notifyLeaving(partnerId);
+                if (!hasCompleted) {
+                    socketService.notifyLeaving(partnerId);
+                } else {
+                    socketService.notifyCompletion(partnerId);
+                }
                 socketService.disconnect();
             }
         };
-    }, [mode, partnerId]);
+    }, [mode, partnerId, hasCompleted]);
 
-    const handleCompletion = () => {
-        showAlert({
-            visible: true,
-            title: 'Congratulations!',
-            message: 'You\'ve earned 50 coins for completing your focus session!',
-            buttons: [
-                {
-                    text: 'Back to Home',
-                    onPress: () => {
-                        setAlertConfig(prev => ({ ...prev, visible: false }));
-                        router.replace('/');
-                    }
+    useEffect(() => {
+        const loadCoins = async () => {
+            if (token) {
+                try {
+                    const userCoins = await getUserCoins(token);
+                    setCoins(userCoins);
+                } catch (error) {
+                    console.error('Failed to load coins:', error);
                 }
-            ]
-        });
+            }
+        };
+        loadCoins();
+    }, [token]);
+
+    const handleCompletion = async () => {
+        setHasCompleted(true);
+        const reward = calculateReward(
+            totalTime,
+            mode === 'buddy',
+            true,
+            partnerLeft
+        );
+
+        try {
+            if (token) {
+                const updatedCoins = await updateUserCoins(token, reward.points);
+                setCoins(updatedCoins);
+            }
+
+            showAlert({
+                visible: true,
+                title: reward.type === 'success' ? 'Congratulations!' :
+                    reward.type === 'partner_left' ? 'Session Complete' : 'Session Complete',
+                message: reward.message,
+                buttons: [
+                    {
+                        text: 'Back to Home',
+                        onPress: () => {
+                            setAlertConfig(prev => ({ ...prev, visible: false }));
+                            router.replace('/');
+                        }
+                    }
+                ]
+            });
+        } catch (error) {
+            console.error('Failed to update coins:', error);
+            showAlert({
+                visible: true,
+                title: 'Error',
+                message: 'Failed to update coins. Please try again.',
+                buttons: [
+                    {
+                        text: 'OK',
+                        onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                    }
+                ]
+            });
+        }
     };
 
     const showAlert = (config: typeof alertConfig) => {
         setAlertConfig({ ...config, visible: true });
     };
 
-    const handleGiveUp = () => {
+    const handleGiveUp = async () => {
+        const reward = calculateReward(
+            totalTime,
+            mode === 'buddy',
+            false,
+            partnerLeft
+        );
+
         showAlert({
             visible: true,
             title: 'Give Up',
-            message: 'Are you sure you want to end this session? You won\'t earn any coins.',
+            message: `Are you sure you want to end this session? ${reward.message}`,
             buttons: [
                 {
                     text: 'Cancel',
@@ -124,9 +195,28 @@ export default function FocusScreen() {
                 {
                     text: 'Give Up',
                     style: 'destructive',
-                    onPress: () => {
-                        setAlertConfig(prev => ({ ...prev, visible: false }));
-                        router.back();
+                    onPress: async () => {
+                        try {
+                            if (token) {
+                                const updatedCoins = await updateUserCoins(token, reward.points);
+                                setCoins(updatedCoins);
+                            }
+                            setAlertConfig(prev => ({ ...prev, visible: false }));
+                            router.back();
+                        } catch (error) {
+                            console.error('Failed to update coins:', error);
+                            showAlert({
+                                visible: true,
+                                title: 'Error',
+                                message: 'Failed to update coins. Please try again.',
+                                buttons: [
+                                    {
+                                        text: 'OK',
+                                        onPress: () => setAlertConfig(prev => ({ ...prev, visible: false }))
+                                    }
+                                ]
+                            });
+                        }
                     }
                 }
             ]
@@ -157,10 +247,10 @@ export default function FocusScreen() {
                                 <Text style={styles.separator}>+</Text>
                                 <Text style={[
                                     styles.name,
-                                    partnerLeft && styles.leftPartner
+                                    partnerCompleted && styles.completedPartner
                                 ]}>
                                     {partnerUsername}
-                                    {partnerLeft && ' (Left)'}
+                                    {partnerCompleted ? ' (Completed)' : ''}
                                 </Text>
                             </>
                         )}
@@ -198,6 +288,12 @@ export default function FocusScreen() {
                 message={alertConfig.message}
                 buttons={alertConfig.buttons}
             />
+
+            <View style={styles.coinsContainer}>
+                <Text style={styles.coinsText}>
+                    Current Coins: {coins}
+                </Text>
+            </View>
         </View>
     );
 }
@@ -263,5 +359,20 @@ const styles = StyleSheet.create({
     leftPartner: {
         color: '#999',
         textDecorationLine: 'line-through',
+    },
+    coinsContainer: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        backgroundColor: '#FFD700',
+        padding: 10,
+        borderRadius: 15,
+    },
+    coinsText: {
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    completedPartner: {
+        color: '#34C759',
     },
 });

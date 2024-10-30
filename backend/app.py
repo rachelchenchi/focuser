@@ -3,20 +3,41 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
+from flask_jwt_extended import (
+    JWTManager,
+    jwt_required,
+    get_jwt_identity,
+    create_access_token,
+)
 import datetime
 from collections import defaultdict
 
 app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+# 修改 CORS 配置
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": ["http://localhost:8081", "http://localhost:19006"],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+        }
+    },
+)
 
 # 配置
 app.config["SECRET_KEY"] = "your-secret-key"  # 用于JWT签名
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# JWT配置
+app.config["JWT_SECRET_KEY"] = "your-secret-key"  # 修改为你的密钥
+jwt = JWTManager(app)  # 初始化 JWT
+
 db = SQLAlchemy(app)
+socketio = SocketIO(
+    app, cors_allowed_origins=["http://localhost:8081", "http://localhost:19006"]
+)
 
 
 # 用户模型
@@ -24,64 +45,77 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    coins = db.Column(db.Integer, default=0)
 
-    def __init__(self, username, password):
-        self.username = username
-        self.password = generate_password_hash(password)
+    def update_coins(self, amount):
+        self.coins += amount
+        db.session.commit()
 
 
 # 创建数据库表
 with app.app_context():
-    db.create_all()
+    db.drop_all()  # 删除所有现有表
+    db.create_all()  # 创建新表
 
 
-# 登录路由
-@app.route("/api/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+@app.route("/api/register", methods=["POST"])
+def register():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
 
-    if not username or not password:
-        return jsonify({"message": "用户名和密码不能为空"}), 400
+        if not username or not password:
+            return jsonify({"message": "Username and password are required"}), 400
 
-    user = User.query.filter_by(username=username).first()
+        if User.query.filter_by(username=username).first():
+            return jsonify({"message": "Username already exists"}), 400
 
-    if user and check_password_hash(user.password, password):
-        # 生成 JWT token
-        token = jwt.encode(
-            {
-                "user_id": user.id,
-                "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-            },
-            app.config["SECRET_KEY"],
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        access_token = create_access_token(
+            identity=new_user.id, expires_delta=datetime.timedelta(days=1)
         )
 
         return jsonify(
-            {"token": token, "user": {"id": user.id, "username": user.username}}
+            {
+                "token": access_token,
+                "user": {"id": new_user.id, "username": new_user.username},
+            }
+        ), 201
+    except Exception as e:
+        print(f"Registration error: {str(e)}")  # 添加错误日志
+        return jsonify({"message": "Server error"}), 500
+
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    try:
+        data = request.get_json()
+        username = data.get("username")
+        password = data.get("password")
+
+        if not username or not password:
+            return jsonify({"message": "Username and password are required"}), 400
+
+        user = User.query.filter_by(username=username).first()
+
+        if not user or not check_password_hash(user.password, password):
+            return jsonify({"message": "Invalid username or password"}), 401
+
+        access_token = create_access_token(
+            identity=user.id, expires_delta=datetime.timedelta(days=1)
         )
 
-    return jsonify({"message": "用户名或密码错误"}), 401
-
-
-# 注册路由
-@app.route("/api/register", methods=["POST"])
-def register():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"message": "用户名和密码不能为空"}), 400
-
-    if User.query.filter_by(username=username).first():
-        return jsonify({"message": "用户名已存在"}), 400
-
-    new_user = User(username=username, password=password)
-    db.session.add(new_user)
-    db.session.commit()
-
-    return jsonify({"message": "注册成功"}), 201
+        return jsonify(
+            {"token": access_token, "user": {"id": user.id, "username": user.username}}
+        )
+    except Exception as e:
+        print(f"Login error: {str(e)}")  # 添加错误日志
+        return jsonify({"message": "Server error"}), 500
 
 
 # 存储等待配对的用户
@@ -152,6 +186,39 @@ def handle_leaving(data):
     if partner_id:
         # 通知伙伴该用户已离开
         emit("partner_left", room=partner_id)
+
+
+@socketio.on("session_complete")
+def handle_completion(data):
+    partner_id = data.get("partner_id")
+    if partner_id:
+        emit("partner_complete", room=partner_id)
+
+
+@app.route("/api/coins/update", methods=["POST"])
+@jwt_required()
+def update_coins():
+    data = request.get_json()
+    amount = data.get("amount")
+    user_id = get_jwt_identity()
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    user.update_coins(amount)
+    return jsonify({"message": "Coins updated successfully", "coins": user.coins})
+
+
+@app.route("/api/coins", methods=["GET"])
+@jwt_required()
+def get_coins():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    return jsonify({"coins": user.coins})
 
 
 if __name__ == "__main__":
