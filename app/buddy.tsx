@@ -164,6 +164,47 @@ export default function BuddyScreen() {
         });
     };
 
+    const handleTimeout = () => {
+        console.log('Timeout handler called');
+        setIsSearching(false);
+        setTimeoutCount(30);
+        showAlert({
+            visible: true,
+            title: 'No Match Found',
+            message: 'Would you like to start a solo session instead?',
+            buttons: [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                    onPress: () => {
+                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                        setIsSearching(false);
+                    }
+                },
+                {
+                    text: 'Start Solo',
+                    onPress: () => {
+                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                        setMode('solo');
+                        router.push({
+                            pathname: '/focus',
+                            params: {
+                                time: selectedTime,
+                                mode: 'solo'
+                            }
+                        });
+                    }
+                }
+            ]
+        });
+    };
+
+    useEffect(() => {
+        if (isSearching && timeoutCount === 0) {
+            handleTimeout();
+        }
+    }, [timeoutCount, isSearching]);
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Focus Session Setup</Text>

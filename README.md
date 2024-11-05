@@ -1,48 +1,35 @@
-# Focuser App
+# Focuser
 
-A React Native application for medication tracking and focused work sessions with buddies.
+A collaborative focus timer app that helps users stay productive together. Users can choose to study alone or pair up with a buddy for enhanced motivation and rewards.
 
 ## Features
 
-- Medication Records: Track medications and get reminders
-- Buddy Doubling: Find focus partners and earn rewards together
+### Core Features
+- **Focus Timer**
+  - Customizable focus duration (30s for testing, 25/30/45/60 minutes)
+  - Pause/Resume functionality
+  - Visual countdown timer
 
-## Development
+### Buddy System
+- **Real-time Buddy Matching**
+  - Match with users choosing the same focus duration
+  - 30-second matching timeout with solo option
+  - Real-time partner status updates
 
-### Prerequisites
+### Reward System
+- **Dynamic Rewards**
+  - Solo completion: 50 coins
+  - Buddy completion: 100 coins (both users must complete)
+  - Partner left completion: 75 coins
+  - Early quit penalty: -10 coins
+  - Buddy quit penalty: -20 coins
 
-- Node.js 18+
-- npm
-- Expo CLI
-- [Android Studio](https://developer.android.com/studio) (for Android development)
-- [Xcode](https://developer.apple.com/xcode/) (for iOS development, macOS only)
+### User Management
+- User registration and login
+- Persistent coin balance
+- Session history tracking
 
-### Setup
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd focuser
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm start
-```
-
-### Development Environment
-
-You can run the app using:
-- [Expo Go](https://expo.dev/go) on your physical device
-- [Android Emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS Simulator](https://docs.expo.dev/workflow/ios-simulator/) (macOS only)
-
-### Project Structure
+## Project Structure
 
 ```
 focuser/
@@ -65,89 +52,6 @@ focuser/
 - `npm run lint` - Run ESLint
 - `npm run typescript` - Run TypeScript checks
 
-## Testing
-
-### Unit Tests
-```bash
-npm run test
-```
-
-### Type Checking
-```bash
-npm run typescript
-```
-
-### Linting
-```bash
-npm run lint
-```
-
-## CI/CD
-
-This project uses GitHub Actions for continuous integration. The CI pipeline includes:
-
-- Dependency installation
-- Type checking
-- Linting
-- Unit testing
-
-The pipeline runs on:
-- Every push to main branch
-- Every pull request to main branch
-
-## Deployment
-
-### Android
-1. Configure app.json for Android
-2. Build the Android app:
-```bash
-eas build --platform android
-```
-
-### iOS
-1. Configure app.json for iOS
-2. Build the iOS app:
-```bash
-eas build --platform ios
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Commit Guidelines
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `style:` - Code style changes
-- `refactor:` - Code refactoring
-- `test:` - Adding or modifying tests
-- `chore:` - Maintenance tasks
-
-## Troubleshooting
-
-Common issues and their solutions:
-
-1. Metro bundler issues:
-```bash
-npm start --reset-cache
-```
-
-2. Dependencies issues:
-```bash
-rm -rf node_modules
-npm install
-```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -157,4 +61,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Project Link: [https://github.com/yourusername/focuser](https://github.com/yourusername/focuser)
+Project Link: [https://github.com/rachelchenchi/focuser](https://github.com/rachelchenchi/focuser)

@@ -58,35 +58,37 @@ export default function FocusScreen() {
                 onMatch: () => { },
                 onTimeout: () => { },
                 onPartnerLeave: () => {
-                    setPartnerLeft(true);
-                    showAlert({
-                        visible: true,
-                        title: 'Partner Left',
-                        message: 'Your focus buddy has left the session.',
-                        buttons: [
-                            {
-                                text: 'Continue Solo',
-                                onPress: () => {
-                                    setAlertConfig(prev => ({ ...prev, visible: false }));
+                    if (!partnerCompleted) {
+                        setPartnerLeft(true);
+                        showAlert({
+                            visible: true,
+                            title: 'Partner Left',
+                            message: 'Your focus buddy has left the session.',
+                            buttons: [
+                                {
+                                    text: 'Continue Solo',
+                                    onPress: () => {
+                                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                                    }
+                                },
+                                {
+                                    text: 'End Session',
+                                    style: 'destructive',
+                                    onPress: () => {
+                                        setAlertConfig(prev => ({ ...prev, visible: false }));
+                                        handleGiveUp();
+                                    }
                                 }
-                            },
-                            {
-                                text: 'End Session',
-                                style: 'destructive',
-                                onPress: () => {
-                                    setAlertConfig(prev => ({ ...prev, visible: false }));
-                                    handleGiveUp();
-                                }
-                            }
-                        ]
-                    });
+                            ]
+                        });
+                    }
                 },
                 onPartnerComplete: () => {
                     setPartnerCompleted(true);
                     showAlert({
                         visible: true,
                         title: 'Partner Completed',
-                        message: 'Your focus buddy has completed their session!',
+                        message: 'Your focus buddy has completed their session! Keep going to earn the buddy bonus!',
                         buttons: [
                             {
                                 text: 'OK',
@@ -108,7 +110,7 @@ export default function FocusScreen() {
                 socketService.disconnect();
             }
         };
-    }, [mode, partnerId, hasCompleted]);
+    }, [mode, partnerId, hasCompleted, partnerCompleted]);
 
     useEffect(() => {
         const loadCoins = async () => {
@@ -130,13 +132,17 @@ export default function FocusScreen() {
             totalTime,
             mode === 'buddy',
             true,
-            partnerLeft
+            partnerLeft && !partnerCompleted
         );
 
         try {
             if (token) {
                 const updatedCoins = await updateUserCoins(token, reward.points);
                 setCoins(updatedCoins);
+            }
+
+            if (mode === 'buddy' && partnerId) {
+                socketService.notifyCompletion(partnerId);
             }
 
             showAlert({
