@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Animated, Easing } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import socketService from './services/socket';
 import { AlertModal } from './components/AlertModal';
-import { LoadingSpinner } from './components/LoadingSpinner';
 import { useAuth } from './contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
+import { MatchSuccessModal } from './components/MatchSuccessModal';
 
 const FOCUS_TIMES = [
     { label: '30 seconds (Debug)', value: 0.5 },
@@ -39,6 +40,9 @@ export default function BuddyScreen() {
         buttons: []
     });
     const { user } = useAuth();
+    const spinValue = new Animated.Value(0);
+    const [matchedPartner, setMatchedPartner] = useState<string | null>(null);
+    const [matchedPartnerId, setMatchedPartnerId] = useState<string | null>(null);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -60,6 +64,27 @@ export default function BuddyScreen() {
         };
     }, []);
 
+    useEffect(() => {
+        let animation: Animated.CompositeAnimation;
+        if (isSearching) {
+            spinValue.setValue(0);
+            animation = Animated.loop(
+                Animated.timing(spinValue, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.linear,
+                    useNativeDriver: true,
+                }),
+                { iterations: -1 }
+            );
+            animation.start();
+        }
+        return () => {
+            animation?.stop();
+            spinValue.setValue(0);
+        };
+    }, [isSearching]);
+
     const resetSearch = () => {
         setIsSearching(false);
         setTimeoutCount(30);
@@ -70,35 +95,18 @@ export default function BuddyScreen() {
     };
 
     const handleStart = () => {
+        console.log('handleStart called, mode:', mode);
         if (mode === 'buddy' && user) {
+            console.log('Starting buddy matching...');
             setIsSearching(true);
             setTimeoutCount(30);
-            console.log('Starting match search...');
 
             socketService.startMatching(selectedTime, user.username, {
                 onMatch: (partnerId, partnerUsername) => {
                     console.log('Match found:', partnerId, partnerUsername);
                     resetSearch();
-                    showAlert({
-                        visible: true,
-                        title: 'Match Found!',
-                        message: `You've been matched with ${partnerUsername}!`,
-                        buttons: [{
-                            text: 'Start',
-                            onPress: () => {
-                                setAlertConfig(prev => ({ ...prev, visible: false }));
-                                router.push({
-                                    pathname: '/focus',
-                                    params: {
-                                        time: selectedTime,
-                                        mode: mode,
-                                        partnerId,
-                                        partnerUsername
-                                    }
-                                });
-                            }
-                        }]
-                    });
+                    setMatchedPartnerId(partnerId);
+                    setMatchedPartner(partnerUsername);
                 },
                 onTimeout: () => {
                     console.log('Match timeout received');
@@ -134,6 +142,7 @@ export default function BuddyScreen() {
                 }
             });
         } else {
+            console.log('Not in buddy mode or no user');
             router.push({
                 pathname: '/focus',
                 params: {
@@ -209,6 +218,12 @@ export default function BuddyScreen() {
         }
     }, [timeoutCount, isSearching]);
 
+    const spin = spinValue.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '360deg'],
+        extrapolate: 'extend'
+    });
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -249,7 +264,12 @@ export default function BuddyScreen() {
 
                 {isSearching ? (
                     <View style={styles.searchingContainer}>
-                        <LoadingSpinner size={50} color="#D4D41A" />
+                        <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                            <Image
+                                source={require('../assets/loading-icon.png')}
+                                style={styles.loadingIcon}
+                            />
+                        </Animated.View>
                         <Text style={styles.searchingText}>
                             Looking for a buddy...
                         </Text>
@@ -267,7 +287,10 @@ export default function BuddyScreen() {
                     <View style={styles.buttonsContainer}>
                         <TouchableOpacity
                             style={[styles.button, styles.matchButton]}
-                            onPress={() => handleStart()}
+                            onPress={() => {
+                                setMode('buddy');
+                                handleStart();
+                            }}
                         >
                             <Text style={styles.buttonText}>Match a Random Buddy</Text>
                         </TouchableOpacity>
@@ -275,8 +298,13 @@ export default function BuddyScreen() {
                         <TouchableOpacity
                             style={[styles.button, styles.soloButton]}
                             onPress={() => {
-                                setMode('solo');
-                                handleStart();
+                                router.push({
+                                    pathname: '/focus',
+                                    params: {
+                                        time: selectedTime,
+                                        mode: 'solo'
+                                    }
+                                });
                             }}
                         >
                             <Text style={styles.buttonText}>Study Alone</Text>
@@ -290,6 +318,23 @@ export default function BuddyScreen() {
                 title={alertConfig.title}
                 message={alertConfig.message}
                 buttons={alertConfig.buttons}
+            />
+
+            <MatchSuccessModal
+                visible={!!matchedPartner}
+                partnerUsername={matchedPartner || ''}
+                onStart={() => {
+                    setMatchedPartner(null);
+                    router.push({
+                        pathname: '/focus',
+                        params: {
+                            time: selectedTime,
+                            mode: mode,
+                            partnerId: matchedPartnerId,
+                            partnerUsername: matchedPartner
+                        }
+                    });
+                }}
             />
         </SafeAreaView>
     );
@@ -391,5 +436,10 @@ const styles = StyleSheet.create({
         color: '#FF3B30',
         fontSize: 16,
         fontWeight: '600',
+    },
+    loadingIcon: {
+        width: 80,
+        height: 80,
+        resizeMode: 'contain',
     },
 });

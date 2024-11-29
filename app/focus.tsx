@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { AlertModal } from './components/AlertModal';
 import { useAuth } from './contexts/AuthContext';
@@ -241,52 +241,59 @@ export default function FocusScreen() {
 
     return (
         <View style={styles.container}>
-            {mode === 'buddy' && (
-                <View style={styles.partnerInfo}>
-                    <Text style={styles.partnerText}>
-                        {partnerLeft ? 'Continuing Solo' : 'Focusing with:'}
-                    </Text>
-                    <View style={styles.namesContainer}>
-                        <Text style={styles.name}>{user?.username}</Text>
-                        {!partnerLeft && (
-                            <>
-                                <Text style={styles.separator}>+</Text>
-                                <Text style={[
-                                    styles.name,
-                                    partnerCompleted && styles.completedPartner
-                                ]}>
-                                    {partnerUsername}
-                                    {partnerCompleted ? ' (Completed)' : ''}
-                                </Text>
-                            </>
-                        )}
+            <View style={styles.buddyContainer}>
+                {mode === 'buddy' ? (
+                    <View style={styles.avatarContainer}>
+                        <View style={styles.userStatus}>
+                            <Image
+                                source={require('../assets/avatar1.png')}
+                                style={styles.avatar}
+                            />
+                            <View style={styles.onlineIndicator} />
+                            <Text style={styles.userName}>{partnerUsername}</Text>
+                        </View>
+                        <View style={styles.userStatus}>
+                            <Image
+                                source={require('../assets/avatar2.png')}
+                                style={styles.avatar}
+                            />
+                            <View style={styles.onlineIndicator} />
+                            <Text style={styles.userName}>Me</Text>
+                        </View>
                     </View>
-                </View>
-            )}
+                ) : (
+                    <View style={styles.soloContainer}>
+                        <Image
+                            source={require('../assets/avatar2.png')}
+                            style={styles.avatar}
+                        />
+                        <View style={styles.onlineIndicator} />
+                        <Text style={styles.userName}>Me</Text>
+                    </View>
+                )}
+            </View>
 
             <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
 
-            {!hasCompleted && (
-                <>
-                    <TouchableOpacity
-                        style={[styles.button, styles.startButton]}
-                        onPress={toggleTimer}
-                    >
-                        <Text style={styles.buttonText}>
-                            {isActive ? 'Pause' : 'Start'}
-                        </Text>
-                    </TouchableOpacity>
+            <View style={styles.buttonsContainer}>
+                <TouchableOpacity
+                    style={[styles.button, styles.pauseButton]}
+                    onPress={toggleTimer}
+                >
+                    <Text style={styles.buttonText}>
+                        {isActive ? 'Be Right Back' : 'Start'}
+                    </Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.button, styles.giveUpButton]}
-                        onPress={handleGiveUp}
-                    >
-                        <Text style={[styles.buttonText, styles.giveUpText]}>
-                            Give Up
-                        </Text>
-                    </TouchableOpacity>
-                </>
-            )}
+                <TouchableOpacity
+                    style={[styles.button, styles.quitButton]}
+                    onPress={handleGiveUp}
+                >
+                    <Text style={[styles.buttonText, styles.quitButtonText]}>
+                        Quit
+                    </Text>
+                </TouchableOpacity>
+            </View>
 
             <AlertModal
                 visible={alertConfig.visible}
@@ -307,64 +314,77 @@ export default function FocusScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        backgroundColor: '#FFFEF2',
+        justifyContent: 'space-between',
+        padding: 20,
+    },
+    buddyContainer: {
         alignItems: 'center',
-        backgroundColor: '#fff',
+        marginTop: 60,
+    },
+    avatarContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 60,
+    },
+    userStatus: {
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        marginBottom: 8,
+    },
+    onlineIndicator: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: '#34C759',
+        position: 'absolute',
+        bottom: 45,
+        right: 0,
+    },
+    userName: {
+        fontSize: 16,
+        color: '#333',
     },
     timer: {
         fontSize: 72,
         fontWeight: 'bold',
+        textAlign: 'center',
+        color: '#333',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: '45%',
+        transform: [{ translateY: -36 }],
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
         marginBottom: 40,
     },
     button: {
-        padding: 15,
-        borderRadius: 8,
-        width: 200,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
         alignItems: 'center',
-        marginVertical: 10,
     },
-    startButton: {
-        backgroundColor: '#007AFF',
+    pauseButton: {
+        backgroundColor: '#D4D41A',
     },
-    giveUpButton: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#FF3B30',
+    quitButton: {
+        backgroundColor: '#FFB8B8',
     },
     buttonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    giveUpText: {
-        color: '#FF3B30',
-    },
-    partnerInfo: {
-        alignItems: 'center',
-        marginBottom: 30,
-    },
-    partnerText: {
+        color: 'white',
         fontSize: 16,
-        color: '#666',
-        marginBottom: 10,
-    },
-    namesContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    name: {
-        fontSize: 18,
         fontWeight: 'bold',
-        color: '#007AFF',
     },
-    separator: {
-        fontSize: 20,
-        color: '#666',
-    },
-    leftPartner: {
-        color: '#999',
-        textDecorationLine: 'line-through',
+    quitButtonText: {
+        color: '#FF3B30',
     },
     coinsContainer: {
         position: 'absolute',
@@ -378,7 +398,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
     },
-    completedPartner: {
-        color: '#34C759',
+    soloContainer: {
+        alignItems: 'center',
     },
 });
