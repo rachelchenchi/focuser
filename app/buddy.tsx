@@ -136,7 +136,10 @@ export default function BuddyScreen() {
         } else {
             router.push({
                 pathname: '/focus',
-                params: { time: selectedTime, mode: mode }
+                params: {
+                    time: selectedTime,
+                    mode: 'solo'
+                }
             });
         }
     };
