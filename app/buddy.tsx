@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import socketService from './services/socket';
 import { AlertModal } from './components/AlertModal';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { useAuth } from './contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 const FOCUS_TIMES = [
     { label: '30 seconds (Debug)', value: 0.5 },
@@ -206,70 +207,80 @@ export default function BuddyScreen() {
     }, [timeoutCount, isSearching]);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Focus Session Setup</Text>
-
-            <View style={styles.pickerContainer}>
-                <Text style={styles.label}>Select Focus Time:</Text>
-                <Picker
-                    selectedValue={selectedTime}
-                    onValueChange={setSelectedTime}
-                    style={styles.picker}
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
                 >
-                    {FOCUS_TIMES.map(time => (
-                        <Picker.Item
-                            key={time.value}
-                            label={time.label}
-                            value={time.value}
-                        />
-                    ))}
-                </Picker>
+                    <Ionicons name="arrow-back" size={24} color="black" />
+                </TouchableOpacity>
+                <Text style={styles.logo}>FOCUSER</Text>
+                <TouchableOpacity style={styles.profileButton}>
+                    <Ionicons name="person-circle-outline" size={24} color="black" />
+                </TouchableOpacity>
             </View>
 
-            <View style={styles.pickerContainer}>
-                <Text style={styles.label}>Select Mode:</Text>
-                <Picker
-                    selectedValue={mode}
-                    onValueChange={setMode}
-                    style={styles.picker}
-                >
-                    {MODE_OPTIONS.map(option => (
-                        <Picker.Item
-                            key={option.value}
-                            label={option.label}
-                            value={option.value}
-                        />
-                    ))}
-                </Picker>
-            </View>
+            <View style={styles.content}>
+                <Text style={styles.pageTitle}>Study with buddy</Text>
 
-            {isSearching && (
-                <View style={styles.loadingContainer}>
-                    <LoadingSpinner size={50} color="#007AFF" />
-                    <Text style={styles.searchingText}>
-                        Looking for a buddy...
-                    </Text>
-                    <Text style={styles.timeoutText}>
-                        {`Timeout in ${timeoutCount} seconds`}
-                    </Text>
-                    <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={handleCancel}
-                    >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
+                <View style={styles.timeSection}>
+                    <Text style={styles.sectionTitle}>Set study time:</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={selectedTime}
+                            onValueChange={setSelectedTime}
+                            style={styles.picker}
+                        >
+                            {FOCUS_TIMES.map(time => (
+                                <Picker.Item
+                                    key={time.value}
+                                    label={time.label}
+                                    value={time.value}
+                                    color="#333"
+                                />
+                            ))}
+                        </Picker>
+                    </View>
                 </View>
-            )}
 
-            <TouchableOpacity
-                style={[styles.button, isSearching && styles.buttonDisabled]}
-                onPress={handleStart}
-                disabled={isSearching}
-            >
-                <Text style={styles.buttonText}>
-                    {isSearching ? 'Searching...' : 'Start Session'}
-                </Text>
-            </TouchableOpacity>
+                {isSearching ? (
+                    <View style={styles.searchingContainer}>
+                        <LoadingSpinner size={50} color="#D4D41A" />
+                        <Text style={styles.searchingText}>
+                            Looking for a buddy...
+                        </Text>
+                        <Text style={styles.timeoutText}>
+                            {`Timeout in ${timeoutCount} seconds`}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={handleCancel}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={styles.buttonsContainer}>
+                        <TouchableOpacity
+                            style={[styles.button, styles.matchButton]}
+                            onPress={() => handleStart()}
+                        >
+                            <Text style={styles.buttonText}>Match a Random Buddy</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.button, styles.soloButton]}
+                            onPress={() => {
+                                setMode('solo');
+                                handleStart();
+                            }}
+                        >
+                            <Text style={styles.buttonText}>Study Alone</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
 
             <AlertModal
                 visible={alertConfig.visible}
@@ -277,68 +288,105 @@ export default function BuddyScreen() {
                 message={alertConfig.message}
                 buttons={alertConfig.buttons}
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFEF2',
     },
-    title: {
-        fontSize: 24,
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+    },
+    backButton: {
+        padding: 8,
+    },
+    logo: {
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginVertical: 20,
+        color: '#D4D41A',
     },
-    pickerContainer: {
+    profileButton: {
+        padding: 8,
+    },
+    content: {
+        flex: 1,
+        padding: 20,
+    },
+    pageTitle: {
+        fontSize: 24,
+        color: '#666',
+        marginBottom: 40,
+    },
+    timeSection: {
+        marginBottom: 40,
+    },
+    sectionTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#333',
         marginBottom: 20,
     },
-    label: {
-        fontSize: 16,
-        marginBottom: 8,
+    pickerContainer: {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        marginTop: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     picker: {
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
+        height: 50,
+    },
+    buttonsContainer: {
+        gap: 16,
     },
     button: {
-        backgroundColor: '#007AFF',
-        padding: 15,
-        borderRadius: 8,
+        height: 56,
+        borderRadius: 12,
+        justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 20,
     },
-    buttonDisabled: {
-        opacity: 0.7,
+    matchButton: {
+        backgroundColor: '#D4D41A',
+    },
+    soloButton: {
+        backgroundColor: '#D4D41A',
+        opacity: 0.8,
     },
     buttonText: {
-        color: '#fff',
+        color: 'white',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
-    loadingContainer: {
+    searchingContainer: {
         alignItems: 'center',
-        marginVertical: 20,
+        marginTop: 40,
     },
     searchingText: {
         fontSize: 16,
-        marginTop: 10,
-        color: '#007AFF',
+        color: '#D4D41A',
+        marginTop: 16,
     },
     timeoutText: {
         fontSize: 14,
-        marginTop: 5,
         color: '#666',
+        marginTop: 8,
     },
     cancelButton: {
-        marginTop: 15,
-        padding: 10,
+        marginTop: 24,
+        padding: 12,
     },
     cancelButtonText: {
         color: '#FF3B30',
         fontSize: 16,
+        fontWeight: '600',
     },
 });

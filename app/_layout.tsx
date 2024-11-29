@@ -4,11 +4,11 @@ import { AuthProvider } from "./contexts/AuthContext";
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Stack>
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen
-          name="index"
+          name="welcome"
           options={{
-            title: 'Home'
+            title: 'Welcome'
           }}
         />
         <Stack.Screen
@@ -18,9 +18,16 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="index"
+          options={{
+            title: 'Home'
+          }}
+        />
+        <Stack.Screen
           name="buddy"
           options={{
             title: 'Focus Session',
+            headerShown: true,
             headerBackVisible: true
           }}
         />
@@ -28,6 +35,7 @@ export default function RootLayout() {
           name="focus"
           options={{
             title: 'Focus Timer',
+            headerShown: true,
             headerBackVisible: false
           }}
         />
