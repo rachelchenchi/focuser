@@ -1,10 +1,12 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { theme } from '../theme/colors';
 
 interface AlertModalProps {
     visible: boolean;
     title: string;
     message: string;
+    showCoin?: boolean;
     buttons: {
         text: string;
         onPress: () => void;
@@ -12,44 +14,45 @@ interface AlertModalProps {
     }[];
 }
 
-export function AlertModal({ visible, title, message, buttons }: AlertModalProps) {
+export function AlertModal({ visible, title, message, showCoin, buttons }: AlertModalProps) {
     return (
         <Modal
+            transparent={true}
             visible={visible}
-            transparent
             animationType="fade"
-            onRequestClose={() => {
-                const cancelButton = buttons.find(b => b.style === 'cancel');
-                if (cancelButton) {
-                    cancelButton.onPress();
-                }
-            }}
         >
             <View style={styles.overlay}>
                 <View style={styles.modalContainer}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.message}>{message}</Text>
-                    <View style={styles.buttonContainer}>
-                        {buttons.map((button, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.button,
-                                    button.style === 'cancel' && styles.cancelButton,
-                                    button.style === 'destructive' && styles.destructiveButton,
-                                ]}
-                                onPress={button.onPress}
-                            >
-                                <Text
+                    <View style={styles.modalContent}>
+                        {showCoin && (
+                            <Image
+                                source={require('../../assets/coin.png')}
+                                style={styles.coinIcon}
+                            />
+                        )}
+                        <Text style={styles.title}>{title}</Text>
+                        <Text style={styles.message}>{message}</Text>
+                        <View style={styles.buttonContainer}>
+                            {buttons.map((button, index) => (
+                                <TouchableOpacity
+                                    key={index}
                                     style={[
+                                        styles.button,
+                                        button.style === 'destructive' && styles.destructiveButton,
+                                        button.style === 'cancel' && styles.cancelButton
+                                    ]}
+                                    onPress={button.onPress}
+                                >
+                                    <Text style={[
                                         styles.buttonText,
                                         button.style === 'destructive' && styles.destructiveText,
-                                    ]}
-                                >
-                                    {button.text}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                                        button.style === 'cancel' && styles.cancelText
+                                    ]}>
+                                        {button.text}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
                 </View>
             </View>
@@ -65,47 +68,69 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     modalContainer: {
-        backgroundColor: 'white',
-        borderRadius: 12,
+        width: '80%',
+        backgroundColor: '#FFFEF2',
+        borderRadius: 20,
         padding: 20,
-        width: Platform.select({ web: 400, default: '80%' }),
-        maxWidth: 400,
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    modalContent: {
+        width: '100%',
+        alignItems: 'center',
     },
     title: {
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 'bold',
+        color: '#D4D41A',
         marginBottom: 10,
         textAlign: 'center',
     },
     message: {
         fontSize: 16,
+        color: '#333',
         marginBottom: 20,
         textAlign: 'center',
+        lineHeight: 22,
     },
     buttonContainer: {
-        flexDirection: Platform.select({ web: 'row', default: 'column' }),
-        justifyContent: 'center',
+        width: '100%',
         gap: 10,
     },
     button: {
+        backgroundColor: '#D4D41A',
         padding: 12,
-        borderRadius: 8,
-        backgroundColor: '#007AFF',
-        minWidth: 100,
-    },
-    cancelButton: {
-        backgroundColor: '#E5E5EA',
-    },
-    destructiveButton: {
-        backgroundColor: '#FF3B30',
+        borderRadius: 10,
+        width: '100%',
+        alignItems: 'center',
     },
     buttonText: {
         color: 'white',
-        textAlign: 'center',
         fontSize: 16,
         fontWeight: '600',
     },
+    destructiveButton: {
+        backgroundColor: '#FFB8B8',
+    },
     destructiveText: {
-        color: 'white',
+        color: '#FF3B30',
+    },
+    cancelButton: {
+        backgroundColor: '#E5E5E5',
+    },
+    cancelText: {
+        color: '#333',
+    },
+    coinIcon: {
+        width: 60,
+        height: 60,
+        marginBottom: 15,
     },
 }); 

@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
 import { AuthProvider } from "./contexts/AuthContext";
 
 export default function RootLayout() {
@@ -6,37 +6,45 @@ export default function RootLayout() {
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen
+          name="index"
+          options={{
+            headerShown: false
+          }}
+        />
+        <Stack.Screen
           name="welcome"
           options={{
-            title: 'Welcome'
+            headerShown: false
           }}
         />
         <Stack.Screen
           name="login"
           options={{
-            title: 'Login'
+            headerShown: false
           }}
         />
         <Stack.Screen
-          name="index"
+          name="home"
           options={{
-            title: 'Home'
+            headerShown: false
           }}
         />
         <Stack.Screen
           name="buddy"
           options={{
-            title: 'Focus Session',
-            headerShown: true,
-            headerBackVisible: true
+            headerShown: false
           }}
         />
         <Stack.Screen
           name="focus"
           options={{
-            title: 'Focus Timer',
-            headerShown: true,
-            headerBackVisible: false
+            headerShown: false
+          }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{
+            headerShown: false
           }}
         />
       </Stack>

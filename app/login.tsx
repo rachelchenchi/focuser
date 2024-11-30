@@ -47,7 +47,7 @@ export default function LoginScreen() {
             } else {
                 const response = await authService.login(username, password);
                 authLogin(response.token, response.user);
-                router.replace('/');
+                router.replace('/home');
             }
         } catch (error) {
             showAlert('Error', error instanceof Error ? error.message : 'Operation failed');

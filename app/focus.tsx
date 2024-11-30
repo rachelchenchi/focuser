@@ -5,10 +5,11 @@ import { AlertModal } from './components/AlertModal';
 import { useAuth } from './contexts/AuthContext';
 import socketService from './services/socket';
 import { calculateReward, updateUserCoins, getUserCoins } from './services/rewards';
+import { theme } from './theme/colors';
 
 export default function FocusScreen() {
     const params = useLocalSearchParams();
-    const { user, token } = useAuth();
+    const { user, token, setUserStats } = useAuth();
     const totalTime = Number(params.time) * 60;
     const [timeLeft, setTimeLeft] = useState(totalTime);
     const [isActive, setIsActive] = useState(false);
@@ -16,15 +17,21 @@ export default function FocusScreen() {
     const mode = params.mode as string;
     const partnerId = params.partnerId as string;
     const partnerUsername = params.partnerUsername as string;
-    const [alertConfig, setAlertConfig] = useState({
-        visible: false,
-        title: '',
-        message: '',
-        buttons: [] as Array<{
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        showCoin?: boolean;
+        buttons: Array<{
             text: string;
             style?: 'default' | 'cancel' | 'destructive';
             onPress: () => void;
-        }>
+        }>;
+    }>({
+        visible: false,
+        title: '',
+        message: '',
+        buttons: []
     });
     const [partnerLeft, setPartnerLeft] = useState(false);
     const [coins, setCoins] = useState(0);
@@ -58,7 +65,8 @@ export default function FocusScreen() {
                 onMatch: () => { },
                 onTimeout: () => { },
                 onPartnerLeave: () => {
-                    if (!partnerCompleted) {
+                    if (!partnerCompleted && !hasCompleted) {
+                        console.log('onPartnerLeave triggered. partnerCompleted not true');
                         setPartnerLeft(true);
                         showAlert({
                             visible: true,
@@ -84,6 +92,7 @@ export default function FocusScreen() {
                     }
                 },
                 onPartnerComplete: () => {
+                    console.log('Partner Complete Event Triggered');
                     setPartnerCompleted(true);
                     showAlert({
                         visible: true,
@@ -102,12 +111,21 @@ export default function FocusScreen() {
 
         return () => {
             if (mode === 'buddy' && partnerId) {
-                if (!hasCompleted) {
-                    socketService.notifyLeaving(partnerId);
-                } else {
-                    socketService.notifyCompletion(partnerId);
-                }
-                socketService.disconnect();
+                console.log('Cleanup function triggered:', {
+                    hasCompleted,
+                    partnerCompleted
+                });
+
+                setTimeout(() => {
+                    if (!hasCompleted) {
+                        socketService.notifyLeaving(partnerId);
+                        console.log('notifyLeaving triggered');
+                    } else {
+                        socketService.notifyCompletion(partnerId);
+                        console.log('notifyCompletion triggered');
+                    }
+                    socketService.disconnect();
+                }, 100);
             }
         };
     }, [mode, partnerId, hasCompleted, partnerCompleted]);
@@ -139,6 +157,25 @@ export default function FocusScreen() {
             if (token) {
                 const updatedCoins = await updateUserCoins(token, reward.points);
                 setCoins(updatedCoins);
+
+                await fetch('http://localhost:5000/api/focus/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        focusTime: totalTime / 60
+                    })
+                });
+
+                const statsResponse = await fetch('http://localhost:5000/api/user/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const statsData = await statsResponse.json();
+                setUserStats(statsData);
             }
 
             if (mode === 'buddy' && partnerId) {
@@ -150,22 +187,23 @@ export default function FocusScreen() {
                 title: reward.type === 'success' ? 'Congratulations!' :
                     reward.type === 'partner_left' ? 'Session Complete' : 'Session Complete',
                 message: reward.message,
+                showCoin: true,
                 buttons: [
                     {
                         text: 'Back to Home',
                         onPress: () => {
                             setAlertConfig(prev => ({ ...prev, visible: false }));
-                            router.replace('/');
+                            router.replace('/home');
                         }
                     }
                 ]
             });
         } catch (error) {
-            console.error('Failed to update coins:', error);
+            console.error('Failed to update stats:', error);
             showAlert({
                 visible: true,
                 title: 'Error',
-                message: 'Failed to update coins. Please try again.',
+                message: 'Failed to update stats. Please try again.',
                 buttons: [
                     {
                         text: 'OK',
@@ -208,7 +246,7 @@ export default function FocusScreen() {
                                 setCoins(updatedCoins);
                             }
                             setAlertConfig(prev => ({ ...prev, visible: false }));
-                            router.back();
+                            router.replace('/home');
                         } catch (error) {
                             console.error('Failed to update coins:', error);
                             showAlert({
@@ -249,7 +287,10 @@ export default function FocusScreen() {
                                 source={require('../assets/avatar1.png')}
                                 style={styles.avatar}
                             />
-                            <View style={styles.onlineIndicator} />
+                            <View style={[
+                                styles.onlineIndicator,
+                                partnerLeft && styles.offlineIndicator
+                            ]} />
                             <Text style={styles.userName}>{partnerUsername}</Text>
                         </View>
                         <View style={styles.userStatus}>
@@ -281,7 +322,7 @@ export default function FocusScreen() {
                     onPress={toggleTimer}
                 >
                     <Text style={styles.buttonText}>
-                        {isActive ? 'Be Right Back' : 'Start'}
+                        {isActive ? 'Pause' : 'Start'}
                     </Text>
                 </TouchableOpacity>
 
@@ -299,6 +340,7 @@ export default function FocusScreen() {
                 visible={alertConfig.visible}
                 title={alertConfig.title}
                 message={alertConfig.message}
+                showCoin={alertConfig.showCoin}
                 buttons={alertConfig.buttons}
             />
 
@@ -344,6 +386,9 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 45,
         right: 0,
+    },
+    offlineIndicator: {
+        backgroundColor: '#8E8E93',
     },
     userName: {
         fontSize: 16,
@@ -401,4 +446,5 @@ const styles = StyleSheet.create({
     soloContainer: {
         alignItems: 'center',
     },
+
 });

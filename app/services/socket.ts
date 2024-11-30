@@ -62,6 +62,13 @@ class SocketService {
             }
         });
 
+        this.socket.on('partner_complete', () => {
+            console.log('Partner completed the session');
+            if (callbacks.onPartnerComplete) {
+                callbacks.onPartnerComplete();
+            }
+        });
+
         console.log('Emitting start_matching with focus time:', focusTime);
         this.socket.emit('start_matching', {
             focus_time: focusTime,

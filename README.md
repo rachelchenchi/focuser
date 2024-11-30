@@ -6,7 +6,7 @@ A collaborative focus timer app that helps users stay productive together. Users
 
 ### Core Features
 - **Focus Timer**
-  - Customizable focus duration (30s for testing, 25/30/45/60 minutes)
+  - Customizable focus duration (30s for testing, 30/45/60/120 minutes)
   - Pause/Resume functionality
   - Visual countdown timer
 
@@ -18,11 +18,18 @@ A collaborative focus timer app that helps users stay productive together. Users
 
 ### Reward System
 - **Dynamic Rewards**
-  - Solo completion: 50 coins
-  - Buddy completion: 100 coins (both users must complete)
-  - Partner left completion: 75 coins
-  - Early quit penalty: -10 coins
-  - Buddy quit penalty: -20 coins
+  - Base reward: 1 coin per minute
+  - Solo completion: Base reward
+  - Buddy completion: Base reward × 2
+  - Partner left completion: Base reward × 1.5
+  - Early quit penalty: -20% of base reward
+  - Buddy quit penalty: -40% of base reward
+
+Examples:
+- 30min solo completion: 30 coins
+- 30min buddy completion: 60 coins
+- 60min solo completion: 60 coins
+- 60min buddy completion: 120 coins
 
 ### User Management
 - User registration and login
@@ -41,17 +48,36 @@ focuser/
 ├── constants/            # App constants
 └── types/                # TypeScript type definitions
 ```
+## Getting Started
 
-### Available Scripts
+### Backend Setup
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
 
-- `npm start` - Start the Expo development server
-- `npm run android` - Start Android development build
-- `npm run ios` - Start iOS development build
-- `npm run web` - Start web development build
-- `npm run test` - Run tests
-- `npm run lint` - Run ESLint
-- `npm run typescript` - Run TypeScript checks
+2. Activate the virtual environment:
+- On Windows:
+```bash
+venv\Scripts\activate
+```
+- On macOS/Linux:
+```bash
+source venv/bin/activate
+```
 
+3. Start the backend server:
+```bash
+python app.py
+```
+
+### Frontend Setup
+1. From the project root directory, start the frontend development server:
+```bash
+npx expo start
+```
+
+This will launch the Expo development server, allowing you to run the app on your device or emulator.
 
 ## Acknowledgments
 

@@ -11,10 +11,10 @@ import { MatchSuccessModal } from './components/MatchSuccessModal';
 
 const FOCUS_TIMES = [
     { label: '30 seconds (Debug)', value: 0.5 },
-    { label: '25 minutes', value: 25 },
     { label: '30 minutes', value: 30 },
     { label: '45 minutes', value: 45 },
-    { label: '60 minutes', value: 60 }
+    { label: '60 minutes', value: 60 },
+    { label: '120 minutes', value: 120 },
 ];
 
 const MODE_OPTIONS = [
@@ -24,7 +24,7 @@ const MODE_OPTIONS = [
 ];
 
 export default function BuddyScreen() {
-    const [selectedTime, setSelectedTime] = useState(25);
+    const [selectedTime, setSelectedTime] = useState(0.5);
     const [mode, setMode] = useState('buddy');
     const [isSearching, setIsSearching] = useState(false);
     const [timeoutCount, setTimeoutCount] = useState(30);
@@ -229,12 +229,15 @@ export default function BuddyScreen() {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => router.back()}
+                    onPress={() => router.replace('/home')}
                 >
                     <Ionicons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.logo}>FOCUSER</Text>
-                <TouchableOpacity style={styles.profileButton}>
+                <TouchableOpacity
+                    style={styles.profileButton}
+                    onPress={() => router.push('/profile')}
+                >
                     <Ionicons name="person-circle-outline" size={24} color="black" />
                 </TouchableOpacity>
             </View>

@@ -11,9 +11,9 @@ from flask_jwt_extended import (
 )
 import datetime
 from collections import defaultdict
+import time
 
 app = Flask(__name__)
-# 修改 CORS 配置
 CORS(
     app,
     resources={
@@ -39,6 +39,22 @@ socketio = SocketIO(
     app, cors_allowed_origins=["http://localhost:8081", "http://localhost:19006"]
 )
 
+# 在 socketio = SocketIO(...) 之后添加
+connected_users = {}
+
+
+@socketio.on("connect")
+def handle_connect():
+    print("Client connected")
+    connected_users[request.sid] = request.sid  # 存储连接的用户
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    print("Client disconnected")
+    if request.sid in connected_users:
+        del connected_users[request.sid]
+
 
 # 用户模型
 class User(db.Model):
@@ -46,6 +62,8 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     coins = db.Column(db.Integer, default=0)
+    total_sessions = db.Column(db.Integer, default=0)
+    total_focus_time = db.Column(db.Integer, default=0)
 
     def update_coins(self, amount):
         self.coins += amount
@@ -124,23 +142,6 @@ waiting_users = defaultdict(
 )  # key: focus_time, value: list of (user_id, username) tuples
 
 
-@socketio.on("connect")
-def handle_connect():
-    print("Client connected")
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    print("Client disconnected")
-    user_id = request.sid
-    # 清理等待列表中的断开连接的用户
-    for time_slot in waiting_users:
-        for user_data in waiting_users[time_slot]:
-            if user_data[0] == user_id:
-                waiting_users[time_slot].remove(user_data)
-                break
-
-
 @socketio.on("start_matching")
 def handle_matching(data):
     user_id = request.sid
@@ -185,14 +186,20 @@ def handle_leaving(data):
     partner_id = data.get("partner_id")
     if partner_id:
         # 通知伙伴该用户已离开
+        print(f"partner_left event emitted to partner_id: {partner_id}")
         emit("partner_left", room=partner_id)
 
 
 @socketio.on("session_complete")
 def handle_completion(data):
     partner_id = data.get("partner_id")
+    print(f"session_complete received for partner_id: {partner_id}")
+    print(f"Current connected users: {connected_users}")  # 添加日志
     if partner_id:
+        time.sleep(0.1)
+        print(f"Attempting to emit partner_complete to room: {partner_id}")
         emit("partner_complete", room=partner_id)
+        print(f"partner_complete event emitted to partner_id: {partner_id}")
 
 
 @app.route("/api/coins/update", methods=["POST"])
@@ -219,6 +226,51 @@ def get_coins():
         return jsonify({"message": "User not found"}), 404
 
     return jsonify({"coins": user.coins})
+
+
+@socketio.on("notify_leaving")
+def handle_notify_leaving(partner_id):
+    print(f"notify_leaving event received. partner_id: {partner_id}")
+    # 确保 partner_id 存在且有效
+    if partner_id and partner_id in connected_users:
+        print(f"Emitting partner_left event to partner_id: {partner_id}")
+        emit("partner_left", room=connected_users[partner_id])
+    else:
+        print(
+            f"Failed to emit partner_left. partner_id {partner_id} not found in connected_users"
+        )
+
+
+@app.route("/api/user/stats", methods=["GET"])
+@jwt_required()
+def get_user_stats():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    return jsonify(
+        {
+            "totalSessions": user.total_sessions,
+            "totalFocusTime": user.total_focus_time,
+            "coins": user.coins,
+        }
+    )
+
+
+@app.route("/api/focus/complete", methods=["POST"])
+@jwt_required()
+def complete_focus():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    data = request.get_json()
+    focus_time = data.get("focusTime")
+    if user:
+        user.total_sessions += 1
+        user.total_focus_time += focus_time
+        db.session.commit()
+
+    return jsonify({"success": True})
 
 
 if __name__ == "__main__":

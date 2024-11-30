@@ -8,10 +8,10 @@ export default function WelcomeScreen() {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <Image
-                    source={require('../assets/logo.png')} // 需要添加logo图片
+                    source={require('../assets/logo.png')}
                     style={styles.logo}
                 />
-                <Text style={styles.byText}>By KJ</Text>
+                <Text style={styles.byText}>By Chen Chi and Jiayi Li</Text>
                 <Text style={styles.title}>FOCUSER</Text>
             </View>
 

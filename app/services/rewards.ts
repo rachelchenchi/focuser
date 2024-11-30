@@ -13,39 +13,39 @@ export interface RewardResult {
 }
 
 export const calculateReward = (
-    duration: number,
+    focusTime: number,
     isBuddy: boolean,
     isCompleted: boolean,
-    partnerLeft: boolean = false
-): RewardResult => {
+    partnerLeft: boolean
+) => {
+    const baseReward = Math.floor(focusTime / 60);
+    let points = baseReward;
+    let message = '';
+    let type = 'success';
+
     if (isCompleted) {
         if (isBuddy) {
             if (partnerLeft) {
-                return {
-                    points: REWARD_POINTS.PARTNER_LEFT_COMPLETION,
-                    message: `Your partner left early, but you completed the session! You've earned ${REWARD_POINTS.PARTNER_LEFT_COMPLETION} coins.`,
-                    type: 'partner_left'
-                };
+                points = Math.floor(baseReward * 1.5);
+                message = `Partner left but you made it! Earned ${points} coins!`;
+                type = 'partner_left';
+            } else {
+                points = baseReward * 2;
+                message = `Great teamwork! Earned ${points} coins!`;
             }
-            return {
-                points: REWARD_POINTS.BUDDY_COMPLETION,
-                message: `Congratulations! You've earned ${REWARD_POINTS.BUDDY_COMPLETION} coins for completing a buddy session!`,
-                type: 'success'
-            };
+        } else {
+            message = `Well done! Earned ${points} coins!`;
         }
-        return {
-            points: REWARD_POINTS.SOLO_COMPLETION,
-            message: `Well done! You've earned ${REWARD_POINTS.SOLO_COMPLETION} coins for completing your session!`,
-            type: 'success'
-        };
     } else {
-        const penalty = isBuddy ? REWARD_POINTS.BUDDY_QUIT_PENALTY : REWARD_POINTS.EARLY_QUIT_PENALTY;
-        return {
-            points: penalty,
-            message: `You've lost ${Math.abs(penalty)} coins for ending the session early.`,
-            type: 'penalty'
-        };
+        points = -Math.floor(baseReward * 0.2);
+        if (isBuddy) {
+            points *= 2;
+        }
+        message = `Gave up early. Lost ${Math.abs(points)} coins.`;
+        type = 'quit';
     }
+
+    return { points, message, type };
 };
 
 export const updateUserCoins = async (token: string, amount: number): Promise<number> => {
