@@ -18,7 +18,7 @@ export const calculateReward = (
     isCompleted: boolean,
     partnerLeft: boolean
 ) => {
-    const baseReward = Math.floor(focusTime / 60);
+    const baseReward = Math.floor(focusTime / 60 + 1);
     let points = baseReward;
     let message = '';
     let type = 'success';

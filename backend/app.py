@@ -72,7 +72,6 @@ class User(db.Model):
 
 # 创建数据库表
 with app.app_context():
-    db.drop_all()  # 删除所有现有表
     db.create_all()  # 创建新表
 
 
