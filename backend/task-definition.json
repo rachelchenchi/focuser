@@ -1,0 +1,41 @@
+{
+    "family": "focuser-backend",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "executionRoleArn": "arn:aws:iam::730335531832:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+        {
+            "name": "focuser-backend",
+            "image": "730335531832.dkr.ecr.us-west-2.amazonaws.com/focuser-backend:latest",
+            "portMappings": [
+                {
+                    "containerPort": 5000,
+                    "hostPort": 5000,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                    "name": "FLASK_APP",
+                    "value": "app.py"
+                },
+                {
+                    "name": "FLASK_ENV",
+                    "value": "production"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/focuser-backend",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ]
+}

@@ -79,6 +79,49 @@ npx expo start
 
 This will launch the Expo development server, allowing you to run the app on your device or emulator.
 
+## Docker Deployment
+
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Quick Start
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd focuser
+```
+
+2. Start the application:
+```bash
+docker-compose up
+```
+
+The application will be available at:
+- Frontend: http://localhost:8081
+- Backend API: http://localhost:5000
+
+### Development
+- Frontend container exposes port 8081 for web access
+- Backend container exposes port 5000 for API
+- Hot reload is enabled for both frontend and backend
+
+### Common Commands
+```bash
+# Stop the application
+docker-compose down
+
+# Rebuild containers after code changes
+docker-compose up --build
+
+# View logs
+docker-compose logs
+
+# View specific service logs
+docker-compose logs frontend
+docker-compose logs backend
+```
+
 ## Acknowledgments
 
 - [Expo](https://expo.dev/)
