@@ -35,6 +35,7 @@ const HomeScreen = () => {
 
             {/* Main Content */}
             <View style={styles.content}>
+                {/* Buddy Doubling Card */}
                 <TouchableOpacity
                     style={styles.studyCard}
                     onPress={() => isAuthenticated ? router.push('/buddy') : setAlertVisible(true)}
@@ -42,6 +43,18 @@ const HomeScreen = () => {
                     <View style={styles.cardContent}>
                         <Ionicons name="people" size={24} color="white" />
                         <Text style={styles.cardText}>study with a buddy...</Text>
+                        <Ionicons name="arrow-forward" size={24} color="white" />
+                    </View>
+                </TouchableOpacity>
+
+                {/* Smart Meds Card */}
+                <TouchableOpacity
+                    style={styles.medsCard} // New style for Smart Meds card
+                    onPress={() => isAuthenticated ? router.push('/meds') : setAlertVisible(true)}
+                >
+                    <View style={styles.cardContent}>
+                        <Ionicons name="medkit" size={24} color="white" />
+                        <Text style={styles.cardText}>log your dose...</Text>
                         <Ionicons name="arrow-forward" size={24} color="white" />
                     </View>
                 </TouchableOpacity>
@@ -58,7 +71,7 @@ const HomeScreen = () => {
             <AlertModal
                 visible={alertVisible}
                 title="Login Required"
-                message="Please login to start a focus session"
+                message="Please login to start"
                 buttons={[
                     {
                         text: 'Cancel',
@@ -135,6 +148,12 @@ const styles = StyleSheet.create({
         padding: theme.spacing.xl,
         marginTop: theme.spacing.xl,
     },
+    medsCard: {
+        backgroundColor: '#4CAF50', // A green card for Smart Meds
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.xl,
+        marginTop: theme.spacing.xl,
+    },    
     cardContent: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'r
 import { router } from 'expo-router';
 import { useAuth } from './contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { theme } from './theme/colors';
 
 export default function ProfileScreen() {
     const { user, userStats, logout } = useAuth();
@@ -39,6 +40,14 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.statsSection}>
+                <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{userStats.activeMeds}</Text>
+                    <Text style={styles.statLabel}>Active Meds</Text>
+                    {/* Button to navigate to Meds Manager */}
+                    <TouchableOpacity onPress={() => router.push('/meds')}>
+                        <Text style={styles.manageMedsButton}>Manage Medications</Text>
+                    </TouchableOpacity>
+                </View>
                 <View style={styles.statItem}>
                     <Text style={styles.statValue}>{userStats.totalSessions}</Text>
                     <Text style={styles.statLabel}>Total Sessions</Text>
@@ -134,4 +143,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    manageMedsButton: {
+        marginTop: theme.spacing.sm,
+        fontSize: 14,
+        backgroundColor: '#4CAF50', // Match Meds card color
+        color: 'white',
+        fontWeight: 'bold',
+        padding: 6,
+        borderRadius: 12,
+    },    
 }); 

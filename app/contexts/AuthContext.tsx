@@ -13,6 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface UserStats {
+    activeMeds: number;
     totalSessions: number;
     totalFocusTime: number;
     coins: number;
@@ -25,7 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userStats, setUserStats] = useState<UserStats>({
         totalSessions: 0,
         totalFocusTime: 0,
-        coins: 0
+        coins: 0,
+        activeMeds: 0
     });
 
     const login = (newToken: string, newUser: any) => {
